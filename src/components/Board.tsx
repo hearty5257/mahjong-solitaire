@@ -12,7 +12,9 @@ interface Props {
 
 const Z_OFFSET = 4;
 
-// 計算「每半格像素」，讓牌盤 width 不超過視窗寬，height ≈ 50% 視窗高
+// 計算「每半格像素」：讓牌盤盡可能填滿可用空間
+// 手機（< 720）：用 72% 視窗高、橫向 margin 較小
+// 桌機（≥ 720）：用 55% 視窗高
 function computePxPerHalf(
   viewportW: number,
   viewportH: number,
@@ -20,20 +22,22 @@ function computePxPerHalf(
   boundsH: number,   // (maxY - minY) 半格
   maxZ: number,
 ): number {
-  const availW = Math.min(viewportW - 32, 1100);
-  const availH = Math.max(220, viewportH * 0.55);
+  const isMobile = viewportW < 720;
+  const wMargin = isMobile ? 14 : 32;
+  const hRatio = isMobile ? 0.72 : 0.55;
 
-  // widthPx  = (boundsW + 4) * px + maxZ * Z_OFFSET
-  // heightPx = (boundsH + 4) * px + maxZ * Z_OFFSET
+  const availW = Math.min(viewportW - wMargin, 1100);
+  const availH = Math.max(280, viewportH * hRatio);
+
   const pxFromW = (availW - maxZ * Z_OFFSET) / (boundsW + 4);
   const pxFromH = (availH - maxZ * Z_OFFSET) / (boundsH + 4);
 
   let px = Math.min(pxFromW, pxFromH);
   if (!isFinite(px)) px = 18;
   px = Math.floor(px);
-  // 範圍：手機最小 8、桌機最大 24
-  if (px < 8) px = 8;
-  if (px > 24) px = 24;
+  // 範圍：最小 11（觸控目標 22px）、最大 26
+  if (px < 11) px = 11;
+  if (px > 26) px = 26;
   return px;
 }
 

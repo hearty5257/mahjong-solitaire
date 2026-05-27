@@ -832,70 +832,68 @@ body::before {
 
 /* 手機 ≤ 720px */
 @media (max-width: 720px) {
-  .app { padding: 8px; }
-  .app-header { margin-bottom: 4px; }
-  .app-logo { max-height: 70px; border-radius: 4px; }
-  .board-wrap { min-height: 55vh; padding: 8px; }
+  .app { padding: 6px; }
+  .app-header { margin: 0 0 4px 0; }
+  .app-logo { max-height: 52px; border-radius: 3px; }
+  .subtitle { display: none; }
+  .board-wrap { min-height: 68vh; padding: 6px; }
+  .app-footer { margin-top: 8px; font-size: 11px; }
+  .app-footer small { font-size: 11px; }
 
-  /* 工具列：縮緊 */
-  .toolbar { padding: 8px 10px; gap: 8px; }
-  .toolbar select { padding: 4px 6px; font-size: 13px; }
+  /* 工具列：壓更扁 */
+  .toolbar { padding: 4px 8px; gap: 6px; margin-bottom: 4px; }
+  .toolbar select { padding: 3px 6px; font-size: 13px; }
   .btn { padding: 5px 10px; font-size: 13px; letter-spacing: 0; }
+  .toolbar label { font-size: 12px; }
 
   /* 狀態列：5 個 cell 容許自然換行 */
-  .status { padding: 8px 10px; }
-  .status-row { gap: 8px 14px; }
-  .status-cell { min-width: 48px; }
+  .status { padding: 4px 8px; margin-bottom: 4px; }
+  .status-row { gap: 6px 12px; }
+  .status-cell { min-width: 44px; }
   .status-cell span { font-size: 10px; letter-spacing: 1px; }
-  .status-cell strong { font-size: 15px; }
-  .status-row--small { font-size: 11px; gap: 6px 10px; }
-  .tag { font-size: 11px; padding: 1px 6px; }
+  .status-cell strong { font-size: 14px; }
+  .status-row--small { font-size: 10px; gap: 4px 8px; margin-top: 4px; padding-top: 4px; }
+  .tag { font-size: 10px; padding: 0 6px; }
 
-  /* 道具列 */
-  .magic-items { padding: 6px 8px; gap: 5px; }
-  .magic-btn { padding: 5px 8px; font-size: 12px; gap: 4px; }
-  .magic-emoji { font-size: 14px; }
+  /* 道具列：emoji 為主，文字隱藏可省一半空間 */
+  .magic-items { padding: 4px 6px; gap: 4px; margin-bottom: 4px; }
+  .magic-btn { padding: 5px 7px; font-size: 11px; gap: 3px; }
+  .magic-label { display: none; }
+  .magic-emoji { font-size: 16px; }
   .magic-count { font-size: 11px; padding: 0 6px; }
-
-  /* 牌盤 */
-  .board-wrap { padding: 10px; }
 
   /* 勝利 / 卡關 卡片 */
   .overlay-card { padding: 18px 20px; min-width: 220px; }
-  .overlay-card--win { min-width: 260px; max-width: 90vw; }
+  .overlay-card--win { min-width: 260px; max-width: 92vw; }
   .overlay-card h2 { font-size: 18px; letter-spacing: 2px; }
   .overlay-grid { grid-template-columns: 1fr 1fr; font-size: 12px; }
 }
 
 /* 小手機 ≤ 480px：再緊一點 */
 @media (max-width: 480px) {
-  .app { padding: 6px; }
-  .app-logo { max-height: 56px; }
-  .board-wrap { min-height: 58vh; padding: 6px; }
-  body::before { display: none; } /* 隱藏外框金線，省空間 */
+  .app { padding: 4px; }
+  .app-logo { max-height: 44px; }
+  .board-wrap { min-height: 70vh; padding: 4px; }
+  body::before { display: none; } /* 隱藏外框金線 */
 
-  .toolbar { padding: 6px 8px; gap: 6px; }
-  .toolbar label { font-size: 12px; }
-  .btn { padding: 5px 8px; font-size: 12px; }
+  .toolbar { padding: 3px 6px; gap: 5px; }
+  .btn { padding: 4px 8px; font-size: 12px; }
 
-  .status { padding: 6px 8px; }
-  .status-row { gap: 6px 12px; }
-  .status-cell { min-width: 42px; }
-  .status-cell strong { font-size: 14px; }
+  .status { padding: 3px 6px; }
+  .status-row { gap: 4px 10px; }
+  .status-cell { min-width: 40px; }
+  .status-cell strong { font-size: 13px; }
   .status-cell span { font-size: 9px; }
-  .status-row--small { font-size: 10px; }
+  .status-row--small { font-size: 10px; gap: 3px 8px; }
   .tag { font-size: 10px; padding: 0 5px; }
 
-  .magic-items { padding: 5px 6px; gap: 4px; }
+  .magic-items { padding: 3px 5px; gap: 3px; }
   .magic-btn {
     padding: 4px 6px;
     font-size: 11px;
     border-radius: 2px;
   }
-  .magic-label { display: none; } /* 小螢幕只顯示 emoji + 次數，省空間 */
-  .magic-emoji { font-size: 16px; }
-
-  .board-wrap { padding: 6px; }
+  .magic-emoji { font-size: 17px; }
 
   .overlay-card { padding: 14px 16px; min-width: 200px; }
   .overlay-card h2 { font-size: 16px; }
