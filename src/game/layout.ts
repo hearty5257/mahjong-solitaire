@@ -35,53 +35,23 @@ function pushGrid(slots: LayoutSlot[], z: number, x0: number, y0: number, cols: 
 }
 
 // ------------------------------------------------------------------
-// 1) 經典龜形（原本 136 張）
+// 所有牌型最大寬度 8 張牌（16 半格），向上堆疊更多層
+// 這樣手機畫面比例較佳（直向更高、橫向不會被牌盤撐爆）
 // ------------------------------------------------------------------
+
+// 1) 經典龜形：8x10 底 + 6x6 + 4x4 + 2x2 = 136
 function buildTurtle(): LayoutSlot[] {
   const slots: LayoutSlot[] = [];
-  const layer0: Array<{ y: number; xs: number[] }> = [
-    { y: 0, xs: range(2, 26, 2) },
-    { y: 2, xs: range(4, 24, 2) },
-    { y: 4, xs: range(2, 28, 2) },
-    { y: 6, xs: range(2, 28, 2) },
-    { y: 8, xs: range(2, 28, 2) },
-    { y: 10, xs: range(2, 28, 2) },
-    { y: 12, xs: range(4, 24, 2) },
-    { y: 14, xs: range(2, 26, 2) },
-  ];
-  const layer1: Array<{ y: number; xs: number[] }> = [
-    { y: 4, xs: range(8, 20, 2) },
-    { y: 6, xs: range(8, 20, 2) },
-    { y: 8, xs: range(8, 20, 2) },
-    { y: 10, xs: range(8, 20, 2) },
-  ];
-  const layer2 = [
-    { y: 6, xs: range(10, 18, 2) },
-    { y: 8, xs: range(10, 18, 2) },
-  ];
-  const layer3 = [
-    { y: 6, xs: range(12, 16, 2) },
-    { y: 8, xs: range(12, 16, 2) },
-  ];
-  const layer4 = [{ y: 7, xs: [13] }];
-  pushRows(slots, 0, layer0);
-  pushRows(slots, 1, layer1);
-  pushRows(slots, 2, layer2);
-  pushRows(slots, 3, layer3);
-  pushRows(slots, 4, layer4);
-  slots.push({ x: -2, y: 7, z: 0 });
-  slots.push({ x: 0, y: 7, z: 0 });
-  slots.push({ x: 26, y: 7, z: 0 });
+  pushGrid(slots, 0, 0, 0, 8, 10);    // 80
+  pushGrid(slots, 1, 2, 2, 6, 6);     // 36
+  pushGrid(slots, 2, 4, 4, 4, 4);     // 16
+  pushGrid(slots, 3, 6, 6, 2, 2);     // 4
   return slots; // 136
 }
 
-// ------------------------------------------------------------------
-// 2) 金字塔形 Pyramid（120）
-// 每層向中心縮 2 半格，4 層
-// ------------------------------------------------------------------
+// 2) 金字塔：8x8 + 6x6 + 4x4 + 2x2 = 120（完美對稱）
 function buildPyramid(): LayoutSlot[] {
   const slots: LayoutSlot[] = [];
-  // z=0: 8x8, z=1: 6x6, z=2: 4x4, z=3: 2x2
   for (let z = 0; z < 4; z++) {
     const size = 8 - z * 2;
     const off = z * 2;
@@ -90,90 +60,80 @@ function buildPyramid(): LayoutSlot[] {
   return slots; // 64+36+16+4 = 120
 }
 
-// ------------------------------------------------------------------
-// 3) 雙塔形 Twin Towers（120）
-// 左右兩座 4 層塔 + 中央連接橋
-// ------------------------------------------------------------------
+// 3) 雙塔：上下兩座塔疊放（垂直雙塔，最大寬 8）
+//    上塔 4 層 + 中央連橋 + 下塔 4 層
 function buildTwinTowers(): LayoutSlot[] {
   const slots: LayoutSlot[] = [];
-  const tower = (baseX: number) => {
-    // z=0: 4 cols × 8 rows = 32, x: baseX..baseX+6, y: 0..14
-    pushGrid(slots, 0, baseX, 0, 4, 8);
-    // z=1: 2 cols × 6 rows = 12, centered
-    pushGrid(slots, 1, baseX + 2, 2, 2, 6);
-    // z=2: 2x4 = 8
-    pushGrid(slots, 2, baseX + 2, 4, 2, 4);
-    // z=3: 2x2 = 4
-    pushGrid(slots, 3, baseX + 2, 6, 2, 2);
-  };
-  tower(0);     // 56
-  tower(16);    // 56
-  // 中央連接橋 z=0: 4 cols × 2 rows = 8 (在兩塔中間 y=6,8)
-  pushGrid(slots, 0, 8, 6, 4, 2);
-  return slots; // 56 + 56 + 8 = 120
+  // 上塔（y=0..6）
+  pushGrid(slots, 0, 0, 0, 8, 4);     // z=0: 8x4 = 32
+  pushGrid(slots, 1, 2, 0, 4, 4);     // z=1: 4x4 = 16
+  pushGrid(slots, 2, 4, 2, 2, 2);     // z=2: 2x2 = 4
+  // 中央連橋（y=8）
+  pushGrid(slots, 0, 0, 8, 8, 1);     // z=0: 8x1 = 8
+  // 下塔（y=10..16）
+  pushGrid(slots, 0, 0, 10, 8, 4);    // z=0: 8x4 = 32
+  pushGrid(slots, 1, 2, 12, 4, 4);    // z=1: 4x4 = 16
+  pushGrid(slots, 2, 4, 14, 2, 2);    // z=2: 2x2 = 4
+  return slots; // 32+16+4+8+32+16+4 = 112
 }
 
-// ------------------------------------------------------------------
-// 4) 橋樑形 Bridge（114）
-// 左右兩塊平地，中間升起一座拱橋
-// ------------------------------------------------------------------
+// 4) 橋樑：左右兩塊平地（各 3 寬）+ 中央拱橋
 function buildBridge(): LayoutSlot[] {
   const slots: LayoutSlot[] = [];
-  // 左場 z=0: 6 cols × 8 rows = 48 (x: 0..10)
-  pushGrid(slots, 0, 0, 0, 6, 8);
-  // 右場 z=0: 6 cols × 8 rows = 48 (x: 18..28)
-  pushGrid(slots, 0, 18, 0, 6, 8);
-  // 拱橋 z=1: 3 cols × 4 rows = 12 (x: 12..16, y: 4..10)
-  pushGrid(slots, 1, 12, 4, 3, 4);
-  // 拱橋頂 z=2: 3 cols × 2 rows = 6 (x: 12..16, y: 6..8)
-  pushGrid(slots, 2, 12, 6, 3, 2);
-  return slots; // 48+48+12+6 = 114
+  // 左場 z=0: 3 cols × 10 rows = 30
+  pushGrid(slots, 0, 0, 0, 3, 10);
+  // 右場 z=0: 3 cols × 10 rows = 30 (x=10..14)
+  pushGrid(slots, 0, 10, 0, 3, 10);
+  // 中央底 z=0: 2 cols × 4 rows = 8 (y=6,8,10,12)
+  pushGrid(slots, 0, 6, 6, 2, 4);
+  // 拱橋 z=1: 4 cols × 4 rows = 16 (x=4..10, y=6..12)
+  pushGrid(slots, 1, 4, 6, 4, 4);
+  // 拱橋頂 z=2: 2 cols × 2 rows = 4 (中央)
+  pushGrid(slots, 2, 6, 8, 2, 2);
+  return slots; // 30+30+8+16+4 = 88
 }
 
-// ------------------------------------------------------------------
-// 5) 螺旋形 Spiral（100）
-// 同心環狀，向內每環 z+1，視覺呈現「向上盤旋」
-// ------------------------------------------------------------------
+// 5) 螺旋：8 寬同心環，向內每環 z+1（最寬 8 張）
 function buildSpiral(): LayoutSlot[] {
   const slots: LayoutSlot[] = [];
-  // 環 z=0: 10x10 外框 - 8x8 內框 = 36
-  for (let i = 0; i < 10; i++) {
+  // 外環 z=0: 8x10 外框 - 6x8 內 = 80-48 = 32
+  for (let i = 0; i < 8; i++) {
     for (let j = 0; j < 10; j++) {
-      if (i === 0 || i === 9 || j === 0 || j === 9) {
+      if (i === 0 || i === 7 || j === 0 || j === 9) {
         slots.push({ x: i * 2, y: j * 2, z: 0 });
       }
     }
   }
-  // 環 z=1: 8x8 - 6x6 = 28 (偏移 +2, +2)
-  for (let i = 0; i < 8; i++) {
+  // 中環 z=1: 6x8 外框 - 4x6 內 = 48-24 = 24
+  for (let i = 0; i < 6; i++) {
     for (let j = 0; j < 8; j++) {
-      if (i === 0 || i === 7 || j === 0 || j === 7) {
+      if (i === 0 || i === 5 || j === 0 || j === 7) {
         slots.push({ x: 2 + i * 2, y: 2 + j * 2, z: 1 });
       }
     }
   }
-  // 環 z=2: 6x6 - 4x4 = 20 (偏移 +4, +4)
-  for (let i = 0; i < 6; i++) {
+  // 內環 z=2: 4x6 外框 - 2x4 內 = 24-8 = 16
+  for (let i = 0; i < 4; i++) {
     for (let j = 0; j < 6; j++) {
-      if (i === 0 || i === 5 || j === 0 || j === 5) {
+      if (i === 0 || i === 3 || j === 0 || j === 5) {
         slots.push({ x: 4 + i * 2, y: 4 + j * 2, z: 2 });
       }
     }
   }
-  // 中央 z=3: 4x4 = 16 (偏移 +6, +6)
-  pushGrid(slots, 3, 6, 6, 4, 4);
-  return slots; // 36+28+20+16 = 100
+  // 中央 z=3: 2x4 = 8
+  pushGrid(slots, 3, 6, 6, 2, 4);
+  return slots; // 32+24+16+8 = 80
 }
 
 // ------------------------------------------------------------------
 // Registry
 // ------------------------------------------------------------------
 export const LAYOUTS: Record<LayoutKey, LayoutDef> = {
-  turtle:     { key: 'turtle',     name: '經典龜形', desc: '中央高、四周低，適合新手與標準模式',     build: buildTurtle },
-  pyramid:    { key: 'pyramid',    name: '金字塔',   desc: '中央最高，需逐層拆解中心',               build: buildPyramid },
-  twinTowers: { key: 'twinTowers', name: '雙塔',     desc: '左右兩座牌塔，中間少量連接牌',           build: buildTwinTowers },
-  bridge:     { key: 'bridge',     name: '橋樑',     desc: '左右兩區由中間拱橋連接',                 build: buildBridge },
-  spiral:     { key: 'spiral',     name: '螺旋',     desc: '同心環狀向中心盤旋，順序影響開放路徑',   build: buildSpiral },
+  turtle:     { key: 'turtle',     name: '經典龜形', desc: '8 寬 × 10 高 四層階梯，適合熟悉規則',     build: buildTurtle },
+  pyramid:    { key: 'pyramid',    name: '金字塔',   desc: '對稱四層方塔，逐層拆解中心',               build: buildPyramid },
+  twinTowers: { key: 'twinTowers', name: '雙塔',     desc: '上下兩座塔疊放，中間僅一列連接',           build: buildTwinTowers },
+  bridge:     { key: 'bridge',     name: '橋樑',     desc: '左右兩塊平地，中間拱橋連接',               build: buildBridge },
+  spiral:     { key: 'spiral',     name: '螺旋',     desc: '同心環狀向中心盤旋，順序影響開放路徑',     build: buildSpiral },
 };
 
 export const LAYOUT_KEYS: LayoutKey[] = ['turtle', 'pyramid', 'twinTowers', 'bridge', 'spiral'];
