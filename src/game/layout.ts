@@ -35,9 +35,41 @@ function pushGrid(slots: LayoutSlot[], z: number, x0: number, y0: number, cols: 
 }
 
 // ------------------------------------------------------------------
-// 所有牌型最大寬度 8 張牌（16 半格），向上堆疊更多層
+// 牌局生成硬性限制：
+//   寬度 ≤ MAX_TILES_WIDE 張牌（16 半格）
+//   高度 ≤ MAX_TILES_TALL 張牌（20 半格）
 // 這樣手機畫面比例較佳（直向更高、橫向不會被牌盤撐爆）
 // ------------------------------------------------------------------
+export const MAX_TILES_WIDE = 8;
+export const MAX_TILES_TALL = 10;
+
+// 計算一份 layout 的「寬高張數」
+function measureLayout(slots: LayoutSlot[]): { wide: number; tall: number } {
+  if (slots.length === 0) return { wide: 0, tall: 0 };
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const s of slots) {
+    if (s.x < minX) minX = s.x;
+    if (s.x > maxX) maxX = s.x;
+    if (s.y < minY) minY = s.y;
+    if (s.y > maxY) maxY = s.y;
+  }
+  // 每張牌寬 / 高 = 2 半格；起點 x 與終點 x+2 都要算入
+  return {
+    wide: (maxX - minX + 2) / 2,
+    tall: (maxY - minY + 2) / 2,
+  };
+}
+
+// 違反限制時拋錯（開發階段抓 bug；prod 也會 throw，相當於硬性保證）
+function assertWithinBounds(key: string, slots: LayoutSlot[]) {
+  const { wide, tall } = measureLayout(slots);
+  if (wide > MAX_TILES_WIDE) {
+    throw new Error(`Layout "${key}" 寬度 ${wide} 張超過上限 ${MAX_TILES_WIDE}`);
+  }
+  if (tall > MAX_TILES_TALL) {
+    throw new Error(`Layout "${key}" 高度 ${tall} 張超過上限 ${MAX_TILES_TALL}`);
+  }
+}
 
 // 1) 經典龜形：8x10 底 + 6x6 + 4x4 + 2x2 = 136
 function buildTurtle(): LayoutSlot[] {
@@ -60,21 +92,21 @@ function buildPyramid(): LayoutSlot[] {
   return slots; // 64+36+16+4 = 120
 }
 
-// 3) 雙塔：上下兩座塔疊放（垂直雙塔，最大寬 8）
-//    上塔 4 層 + 中央連橋 + 下塔 4 層
+// 3) 雙塔：上下兩座塔疊放（垂直雙塔，寬 8 高 9）
+//    上塔 + 中央連橋 + 下塔，所有 z 對齊
 function buildTwinTowers(): LayoutSlot[] {
   const slots: LayoutSlot[] = [];
-  // 上塔（y=0..6）
+  // 上塔（y=0..6，4 rows）
   pushGrid(slots, 0, 0, 0, 8, 4);     // z=0: 8x4 = 32
-  pushGrid(slots, 1, 2, 0, 4, 4);     // z=1: 4x4 = 16
+  pushGrid(slots, 1, 2, 0, 4, 4);     // z=1: 4x4 = 16 (對齊 z=0)
   pushGrid(slots, 2, 4, 2, 2, 2);     // z=2: 2x2 = 4
-  // 中央連橋（y=8）
+  // 中央連橋（y=8，1 row）
   pushGrid(slots, 0, 0, 8, 8, 1);     // z=0: 8x1 = 8
-  // 下塔（y=10..16）
+  // 下塔（y=10..16，4 rows）
   pushGrid(slots, 0, 0, 10, 8, 4);    // z=0: 8x4 = 32
-  pushGrid(slots, 1, 2, 12, 4, 4);    // z=1: 4x4 = 16
-  pushGrid(slots, 2, 4, 14, 2, 2);    // z=2: 2x2 = 4
-  return slots; // 32+16+4+8+32+16+4 = 112
+  pushGrid(slots, 1, 2, 10, 4, 4);    // z=1: 4x4 = 16 (對齊 z=0)
+  pushGrid(slots, 2, 4, 12, 2, 2);    // z=2: 2x2 = 4
+  return slots; // 32+16+4+8+32+16+4 = 112，寬 8 高 9
 }
 
 // 4) 橋樑：左右兩塊平地（各 3 寬）+ 中央拱橋
@@ -154,8 +186,15 @@ function mirrorX(slots: LayoutSlot[]): LayoutSlot[] {
 export function getLayoutByKey(key: LayoutKey, opts?: { mirror?: boolean }): LayoutSlot[] {
   const def = LAYOUTS[key];
   let slots = def.build().map((s) => ({ ...s }));
+  // 硬性限制：寬 ≤ MAX_TILES_WIDE、高 ≤ MAX_TILES_TALL
+  assertWithinBounds(key, slots);
   if (opts?.mirror) slots = mirrorX(slots);
   return slots;
+}
+
+// 公開的尺寸查詢（供測試 / debug 使用）
+export function getLayoutSize(key: LayoutKey): { wide: number; tall: number } {
+  return measureLayout(LAYOUTS[key].build());
 }
 
 // 根據 seed + 難度選一個 layout

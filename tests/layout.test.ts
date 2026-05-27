@@ -1,5 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { getLayoutByKey, getTurtleLayout, LAYOUT_KEYS, LAYOUTS, pickLayoutKey } from '../src/game/layout';
+import {
+  getLayoutByKey,
+  getLayoutSize,
+  getTurtleLayout,
+  LAYOUT_KEYS,
+  LAYOUTS,
+  MAX_TILES_TALL,
+  MAX_TILES_WIDE,
+  pickLayoutKey,
+} from '../src/game/layout';
 import { buildStandardDeck } from '../src/game/tiles';
 
 describe('layout', () => {
@@ -69,6 +78,37 @@ describe('layout', () => {
     for (const k of LAYOUT_KEYS) {
       expect(LAYOUTS[k]).toBeDefined();
       expect(LAYOUTS[k].name.length).toBeGreaterThan(0);
+    }
+  });
+
+  it(`每個牌型寬度 ≤ ${MAX_TILES_WIDE} 張牌`, () => {
+    for (const key of LAYOUT_KEYS) {
+      const { wide } = getLayoutSize(key);
+      expect(wide, `${key} 寬度`).toBeLessThanOrEqual(MAX_TILES_WIDE);
+    }
+  });
+
+  it(`每個牌型高度 ≤ ${MAX_TILES_TALL} 張牌`, () => {
+    for (const key of LAYOUT_KEYS) {
+      const { tall } = getLayoutSize(key);
+      expect(tall, `${key} 高度`).toBeLessThanOrEqual(MAX_TILES_TALL);
+    }
+  });
+
+  it('mirror 後仍在寬高限制內', () => {
+    for (const key of LAYOUT_KEYS) {
+      const slots = getLayoutByKey(key, { mirror: true });
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      for (const s of slots) {
+        if (s.x < minX) minX = s.x;
+        if (s.x > maxX) maxX = s.x;
+        if (s.y < minY) minY = s.y;
+        if (s.y > maxY) maxY = s.y;
+      }
+      const wide = (maxX - minX + 2) / 2;
+      const tall = (maxY - minY + 2) / 2;
+      expect(wide, `${key} mirror 寬`).toBeLessThanOrEqual(MAX_TILES_WIDE);
+      expect(tall, `${key} mirror 高`).toBeLessThanOrEqual(MAX_TILES_TALL);
     }
   });
 });
