@@ -38,7 +38,7 @@ const App: React.FC = () => {
   return (
     <div className="app">
       <header className="app-header">
-        <img className="app-logo" src="/logo.png" alt="心式麻將" />
+        <img className="app-logo" src={`${import.meta.env.BASE_URL}logo.png`} alt="心式麻將" />
         <span className="subtitle">XIN SHI MAHJONG</span>
       </header>
 
