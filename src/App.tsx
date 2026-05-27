@@ -7,6 +7,7 @@ import MagicItems from './components/MagicItems';
 import Toolbar from './components/Toolbar';
 import Curtain, { CurtainPhase } from './components/Curtain';
 import ItemInfoModal from './components/ItemInfoModal';
+import EffectLayer, { EffectKey } from './components/EffectLayer';
 import { ITEM_NAMES, RARITY_COLORS, RARITY_NAMES } from './game/inventory';
 
 const CURTAIN_CLOSE_MS = 600;
@@ -24,6 +25,7 @@ const App: React.FC = () => {
   const [curtainPhase, setCurtainPhase] = useState<CurtainPhase>('idle');
   const [curtainFullscreen, setCurtainFullscreen] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
+  const [effect, setEffect] = useState<EffectKey | null>(null);
   const curtainBusy = useRef(false);
 
   // 包一層：先 closing → action → opening → idle
@@ -45,6 +47,40 @@ const App: React.FC = () => {
       }, CURTAIN_HOLD_MS);
     }, CURTAIN_CLOSE_MS);
   }, []);
+
+  // 道具觸發特效（只在道具實際可用 + 有目標時才播）
+  const totalItem = (k: 'hint' | 'reveal' | 'unseal' | 'magicRemove' | 'undo' | 'shuffle') =>
+    state.items[k] + state.inventory[k];
+  const hasAvailablePair = game.availablePairs > 0;
+  const hasFog = state.board.some((t) => t.modifier === 'fog' && !t.revealed && !t.removed);
+  const hasSealed = state.board.some(
+    (t) => (t.modifier === 'frozen' || t.modifier === 'locked') && !t.removed,
+  );
+
+  const fxHint = () => {
+    if (totalItem('hint') > 0 && hasAvailablePair) setEffect('hint');
+    game.doHint();
+  };
+  const fxReveal = () => {
+    if (totalItem('reveal') > 0 && hasFog) setEffect('reveal');
+    game.doReveal();
+  };
+  const fxUnseal = () => {
+    if (totalItem('unseal') > 0 && hasSealed) setEffect('unseal');
+    game.doUnseal();
+  };
+  const fxMagicRemove = () => {
+    if (totalItem('magicRemove') > 0 && hasAvailablePair) setEffect('magicRemove');
+    game.doMagicRemove();
+  };
+  const fxUndo = () => {
+    if (totalItem('undo') > 0 && state.history.length > 0) setEffect('undo');
+    game.doUndo();
+  };
+  const fxShuffle = () => {
+    if (totalItem('shuffle') > 0) setEffect('shuffle');
+    game.doShuffle();
+  };
 
   // 從首頁進入遊戲
   const goToGame = useCallback((opts?: { difficulty?: Difficulty; daily?: boolean }) => {
@@ -152,12 +188,12 @@ const App: React.FC = () => {
       <MagicItems
         items={state.items}
         inventory={state.inventory}
-        onHint={game.doHint}
-        onMagicRemove={game.doMagicRemove}
-        onUndo={game.doUndo}
-        onShuffle={game.doShuffle}
-        onReveal={game.doReveal}
-        onUnseal={game.doUnseal}
+        onHint={fxHint}
+        onMagicRemove={fxMagicRemove}
+        onUndo={fxUndo}
+        onShuffle={fxShuffle}
+        onReveal={fxReveal}
+        onUnseal={fxUnseal}
         disabled={state.status !== 'playing' && state.history.length === 0}
       />
 
@@ -181,6 +217,8 @@ const App: React.FC = () => {
         {state.message ? <div className="message-toast">{state.message}</div> : null}
 
         {showInfo ? <ItemInfoModal onClose={() => setShowInfo(false)} /> : null}
+
+        <EffectLayer effect={effect} onDone={() => setEffect(null)} />
 
         {state.status === 'won' ? (
           <div className="overlay">
