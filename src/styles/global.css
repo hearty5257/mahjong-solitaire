@@ -218,6 +218,177 @@ body::before {
   padding: 5px 10px !important;
   font-size: 15px;
 }
+
+/* ========== 道具說明 i 按鈕 + Modal ========== */
+.info-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid var(--gold);
+  background:
+    radial-gradient(circle at 30% 30%, rgba(241,207,138,0.25), rgba(0,0,0,0.40));
+  color: var(--gold-bright);
+  font-style: italic;
+  font-weight: 800;
+  font-size: 18px;
+  font-family: 'Times New Roman', Georgia, serif;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 100002;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.2),
+    0 2px 6px rgba(0,0,0,0.55);
+  transition: transform 0.15s, box-shadow 0.15s;
+  padding: 0;
+}
+.info-btn:hover {
+  transform: scale(1.08);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.4),
+    0 3px 10px rgba(0,0,0,0.6),
+    0 0 12px rgba(241,207,138,0.55);
+}
+.info-btn:active { transform: scale(0.96); }
+
+.info-modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 4, 4, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100003;
+  padding: 20px;
+}
+.info-modal {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  max-height: 86%;
+  overflow-y: auto;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.10) 0%, transparent 60%),
+    linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
+  color: var(--text-on-paper);
+  border: 2px solid var(--vermilion-deep);
+  border-radius: 4px;
+  padding: 22px 24px;
+  box-shadow:
+    inset 0 0 0 1px var(--gold),
+    inset 0 0 30px rgba(138,101,38,0.20),
+    0 10px 36px rgba(0,0,0,0.7);
+}
+.info-modal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: var(--corner-tl), var(--corner-tr), var(--corner-bl), var(--corner-br);
+  background-position: 5px 5px, top 5px right 5px, bottom 5px left 5px, bottom 5px right 5px;
+  background-repeat: no-repeat;
+  background-size: 22px 22px;
+}
+.info-close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: var(--vermilion-deep);
+  font-size: 18px;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  line-height: 1;
+  border-radius: 50%;
+  font-weight: 700;
+}
+.info-close:hover { background: rgba(178, 45, 32, 0.15); }
+
+.info-title {
+  margin: 0 0 10px 0;
+  text-align: center;
+  color: var(--vermilion-deep);
+  font-size: 17px;
+  letter-spacing: 6px;
+  font-weight: 700;
+}
+.info-title--mt { margin-top: 18px; }
+
+.info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.info-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 10px;
+  background: rgba(138, 101, 38, 0.08);
+  border: 1px solid rgba(138, 101, 38, 0.28);
+  border-radius: 3px;
+}
+.info-emoji {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  background: linear-gradient(180deg, #fff5d4 0%, #ead9a4 100%);
+  border: 1.5px solid var(--gold);
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5), 0 1px 2px rgba(0,0,0,0.2);
+}
+.info-text { flex: 1 1 auto; min-width: 0; }
+.info-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--vermilion-deep);
+  letter-spacing: 2px;
+  margin-bottom: 2px;
+}
+.info-rarity {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  margin-left: 6px;
+}
+.info-desc {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+.info-meta {
+  font-size: 11px;
+  color: var(--muted-paper);
+  letter-spacing: 1px;
+}
+.info-footer {
+  margin-top: 14px;
+  text-align: center;
+  color: var(--muted-paper);
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+
+/* 手機 RWD */
+@media (max-width: 720px) {
+  .info-btn { width: 28px; height: 28px; font-size: 15px; top: 8px; right: 8px; }
+  .info-modal { padding: 18px 16px; max-height: 92%; }
+  .info-title { font-size: 15px; letter-spacing: 4px; }
+  .info-row { gap: 10px; padding: 7px 8px; }
+  .info-emoji { width: 32px; height: 32px; font-size: 20px; }
+  .info-name { font-size: 13px; }
+  .info-desc { font-size: 12px; }
+  .info-meta { font-size: 10px; }
+}
 .subtitle {
   font-size: 12px;
   color: var(--gold);

@@ -6,6 +6,7 @@ import GameStatus from './components/GameStatus';
 import MagicItems from './components/MagicItems';
 import Toolbar from './components/Toolbar';
 import Curtain, { CurtainPhase } from './components/Curtain';
+import ItemInfoModal from './components/ItemInfoModal';
 import { ITEM_NAMES, RARITY_COLORS, RARITY_NAMES } from './game/inventory';
 
 const CURTAIN_CLOSE_MS = 600;
@@ -22,6 +23,7 @@ const App: React.FC = () => {
   const [landingDifficulty, setLandingDifficulty] = useState<Difficulty>('normal');
   const [curtainPhase, setCurtainPhase] = useState<CurtainPhase>('idle');
   const [curtainFullscreen, setCurtainFullscreen] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
   const curtainBusy = useRef(false);
 
   // 包一層：先 closing → action → opening → idle
@@ -160,6 +162,15 @@ const App: React.FC = () => {
       />
 
       <div className="board-wrap">
+        <button
+          className="info-btn"
+          onClick={() => setShowInfo(true)}
+          aria-label="道具說明"
+          title="道具說明"
+        >
+          i
+        </button>
+
         <Board
           board={state.board}
           selectedId={state.selectedId}
@@ -168,6 +179,8 @@ const App: React.FC = () => {
         />
 
         {state.message ? <div className="message-toast">{state.message}</div> : null}
+
+        {showInfo ? <ItemInfoModal onClose={() => setShowInfo(false)} /> : null}
 
         {state.status === 'won' ? (
           <div className="overlay">
