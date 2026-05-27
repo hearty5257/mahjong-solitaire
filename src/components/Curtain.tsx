@@ -2,15 +2,19 @@ import React from 'react';
 
 export type CurtainPhase = 'idle' | 'closing' | 'opening';
 
-interface Props { phase: CurtainPhase }
+interface Props {
+  phase: CurtainPhase;
+  /** true：覆蓋整個 viewport（landing ↔ game 切換用） */
+  fullscreen?: boolean;
+}
 
-// 中國風紅金窗簾轉場
-// closing：左右兩片紅絨幕從外側往中央拉攏
-// opening：再拉開回外側
-const Curtain: React.FC<Props> = ({ phase }) => {
+const Curtain: React.FC<Props> = ({ phase, fullscreen }) => {
   if (phase === 'idle') return null;
+  const cls =
+    `curtain-overlay curtain-overlay--${phase}` +
+    (fullscreen ? ' curtain-overlay--fullscreen' : '');
   return (
-    <div className={`curtain-overlay curtain-overlay--${phase}`} aria-hidden>
+    <div className={cls} aria-hidden>
       <div className="curtain curtain--left">
         <div className="curtain-pelmet" />
         <div className="curtain-tassel">
@@ -27,7 +31,6 @@ const Curtain: React.FC<Props> = ({ phase }) => {
         </div>
         <div className="curtain-fringe" />
       </div>
-      {/* 中縫金線（兩幕合攏時顯示） */}
       <div className="curtain-seam" />
     </div>
   );

@@ -9,15 +9,17 @@ interface Props {
   onNewGame: () => void;
   onRestart: () => void;
   onDailyChallenge: () => void;
+  onHome: () => void;
 }
 
 const Toolbar: React.FC<Props> = ({
   difficulty, isDailyChallenge, dailyDoneToday,
-  onChangeDifficulty, onNewGame, onRestart, onDailyChallenge,
+  onChangeDifficulty, onNewGame, onRestart, onDailyChallenge, onHome,
 }) => {
   return (
     <div className="toolbar">
       <div className="toolbar-group">
+        <button className="btn btn--home" onClick={onHome} title="回首頁" aria-label="回首頁">🏠</button>
         <label>難度：</label>
         <select
           value={difficulty}

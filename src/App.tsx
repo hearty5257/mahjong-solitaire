@@ -1,5 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react';
 import { useGame } from './hooks/useGame';
+import type { Difficulty } from './game/types';
 import Board from './components/Board';
 import GameStatus from './components/GameStatus';
 import MagicItems from './components/MagicItems';
@@ -7,21 +8,28 @@ import Toolbar from './components/Toolbar';
 import Curtain, { CurtainPhase } from './components/Curtain';
 import { ITEM_NAMES, RARITY_COLORS, RARITY_NAMES } from './game/inventory';
 
-const CURTAIN_CLOSE_MS = 600;  // 拉攏時長
-const CURTAIN_HOLD_MS = 120;   // 拉攏完成後停留
-const CURTAIN_OPEN_MS = 600;   // 拉開時長
+const CURTAIN_CLOSE_MS = 600;
+const CURTAIN_HOLD_MS = 120;
+const CURTAIN_OPEN_MS = 600;
+
+type View = 'landing' | 'game';
 
 const App: React.FC = () => {
   const game = useGame();
   const { state } = game;
 
+  const [view, setView] = useState<View>('landing');
+  const [landingDifficulty, setLandingDifficulty] = useState<Difficulty>('normal');
   const [curtainPhase, setCurtainPhase] = useState<CurtainPhase>('idle');
+  const [curtainFullscreen, setCurtainFullscreen] = useState(false);
   const curtainBusy = useRef(false);
 
-  // 包一層：先 closing → 中央時執行 action → opening → idle
-  const withCurtain = useCallback((action: () => void) => {
+  // 包一層：先 closing → action → opening → idle
+  // fullscreen=true 時窗簾覆蓋整頁（landing ↔ game 切換用），否則只蓋牌盤
+  const withCurtain = useCallback((action: () => void, fullscreen = false) => {
     if (curtainBusy.current) return;
     curtainBusy.current = true;
+    setCurtainFullscreen(fullscreen);
     setCurtainPhase('closing');
     window.setTimeout(() => {
       action();
@@ -29,19 +37,95 @@ const App: React.FC = () => {
         setCurtainPhase('opening');
         window.setTimeout(() => {
           setCurtainPhase('idle');
+          setCurtainFullscreen(false);
           curtainBusy.current = false;
         }, CURTAIN_OPEN_MS);
       }, CURTAIN_HOLD_MS);
     }, CURTAIN_CLOSE_MS);
   }, []);
 
-  return (
-    <div className="app">
-      <header className="app-header">
-        <img className="app-logo" src={`${import.meta.env.BASE_URL}logo.png`} alt="心式麻將" />
-        <span className="subtitle">XIN SHI MAHJONG</span>
-      </header>
+  // 從首頁進入遊戲
+  const goToGame = useCallback((opts?: { difficulty?: Difficulty; daily?: boolean }) => {
+    withCurtain(() => {
+      setView('game');
+      if (opts?.daily) {
+        game.startDailyChallenge();
+      } else {
+        game.newGame({ difficulty: opts?.difficulty ?? landingDifficulty });
+      }
+    }, true);
+  }, [game, landingDifficulty, withCurtain]);
 
+  // 回到首頁
+  const goToLanding = useCallback(() => {
+    withCurtain(() => setView('landing'), true);
+  }, [withCurtain]);
+
+  // 全螢幕窗簾（landing/game 切換時）
+  const fullscreenCurtain = curtainFullscreen ? <Curtain phase={curtainPhase} fullscreen /> : null;
+
+  // ============ Landing View ============
+  if (view === 'landing') {
+    return (
+      <div className="app app--landing">
+        <div className="landing">
+          <img
+            className="landing-logo"
+            src={`${import.meta.env.BASE_URL}logo.png`}
+            alt="心式麻將"
+          />
+
+          <div className="landing-actions">
+            <button
+              className="btn btn--primary btn--start"
+              onClick={() => goToGame()}
+            >
+              開始遊戲
+            </button>
+
+            <div className="landing-difficulty">
+              <label>難度：</label>
+              <select
+                value={landingDifficulty}
+                onChange={(e) => setLandingDifficulty(e.target.value as Difficulty)}
+              >
+                <option value="easy">簡單 · 經典龜形</option>
+                <option value="normal">普通 · 三種牌型</option>
+                <option value="hard">困難 · 五種牌型 + 特殊規則</option>
+              </select>
+            </div>
+
+            <button
+              className={`btn btn--daily ${game.dailyDoneToday() ? 'btn--daily-active' : ''}`}
+              onClick={() => goToGame({ daily: true })}
+              title={game.dailyDoneToday() ? '今日已通關' : '每日固定牌局，保底贈送 Rare 道具'}
+            >
+              每日挑戰 {game.dailyDoneToday() ? '✓' : '🗓'}
+            </button>
+          </div>
+
+          {game.best ? (
+            <div className="landing-info">
+              <span>最佳分數：</span><b>{game.best.score}</b>
+              <span style={{ marginLeft: 12 }}>道具庫：</span>
+              <b>{Object.values(state.inventory).reduce((a, b) => a + b, 0)} 件</b>
+            </div>
+          ) : null}
+
+          <div className="landing-tip">
+            點兩張相同且可移動的牌即可消除。
+            可移動 = 上方沒有牌覆蓋、左或右一邊開放。
+          </div>
+        </div>
+
+        {fullscreenCurtain}
+      </div>
+    );
+  }
+
+  // ============ Game View ============
+  return (
+    <div className="app app--game">
       <Toolbar
         difficulty={game.difficulty}
         isDailyChallenge={state.isDailyChallenge}
@@ -50,6 +134,7 @@ const App: React.FC = () => {
         onNewGame={() => withCurtain(() => game.newGame())}
         onRestart={() => withCurtain(() => game.restart())}
         onDailyChallenge={() => withCurtain(() => game.startDailyChallenge())}
+        onHome={goToLanding}
       />
 
       <GameStatus
@@ -149,6 +234,7 @@ const App: React.FC = () => {
               ) : null}
 
               <div className="overlay-actions">
+                <button className="btn" onClick={goToLanding}>回首頁</button>
                 <button className="btn" onClick={() => withCurtain(() => game.restart())}>重新挑戰</button>
                 <button className="btn btn--primary" onClick={() => withCurtain(() => game.newGame())}>下一局</button>
               </div>
@@ -171,16 +257,11 @@ const App: React.FC = () => {
           </div>
         ) : null}
 
-        {/* 窗簾只覆蓋牌盤區（技能欄下方），不遮工具列與狀態列 */}
-        <Curtain phase={curtainPhase} />
+        {/* 牌盤內窗簾（新局 / 重新開始時） */}
+        {!curtainFullscreen ? <Curtain phase={curtainPhase} /> : null}
       </div>
 
-      <footer className="app-footer">
-        <small>
-          相同的兩張「可移動」牌可配對消除。冰封 / 鎖鏈牌不可配對，迷霧牌需先翻開。
-          通關後會隨機贈送一個魔法道具進入道具庫，下一局可使用。
-        </small>
-      </footer>
+      {fullscreenCurtain}
     </div>
   );
 };
