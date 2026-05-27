@@ -4,7 +4,16 @@ import type { Difficulty, LayoutSlot } from './types';
 export const TILE_W = 2;
 export const TILE_H = 2;
 
-export type LayoutKey = 'turtle' | 'pyramid' | 'twinTowers' | 'bridge' | 'spiral';
+export type LayoutKey =
+  | 'turtle'
+  | 'pyramid'
+  | 'twinTowers'
+  | 'bridge'
+  | 'spiral'
+  | 'cross'
+  | 'diamond'
+  | 'hourglass'
+  | 'heart';
 
 export interface LayoutDef {
   key: LayoutKey;
@@ -125,6 +134,146 @@ function buildBridge(): LayoutSlot[] {
   return slots; // 30+30+8+16+4 = 88
 }
 
+// 工具：依「半格列定義」推入一層
+function pushExplicit(slots: LayoutSlot[], z: number, defs: Array<{ y: number; xs: number[] }>) {
+  for (const r of defs) for (const x of r.xs) slots.push({ x, y: r.y, z });
+}
+
+// 6) 十字 Cross：垂直長條 + 兩側水平延伸（8 寬 × 10 高，88）
+function buildCross(): LayoutSlot[] {
+  const slots: LayoutSlot[] = [];
+  // z=0 垂直主幹：x=4,6,8,10（4 cols），y=0..18（10 rows）= 40
+  pushGrid(slots, 0, 4, 0, 4, 10);
+  // z=0 水平延伸（左右兩翼）：y=6..12（4 rows），左 x=0,2 + 右 x=12,14 = 16
+  pushExplicit(slots, 0, [
+    { y: 6,  xs: [0, 2, 12, 14] },
+    { y: 8,  xs: [0, 2, 12, 14] },
+    { y: 10, xs: [0, 2, 12, 14] },
+    { y: 12, xs: [0, 2, 12, 14] },
+  ]);
+  // z=1 垂直內側：x=6,8（2 cols），y=2..16（8 rows）= 16
+  pushGrid(slots, 1, 6, 2, 2, 8);
+  // z=1 水平內側翼：y=8,10（2 rows），左 x=2,4 + 右 x=10,12 = 8
+  pushExplicit(slots, 1, [
+    { y: 8,  xs: [2, 4, 10, 12] },
+    { y: 10, xs: [2, 4, 10, 12] },
+  ]);
+  // z=2 中心 2x4 = 8
+  pushGrid(slots, 2, 6, 8, 2, 4);
+  return slots; // 40+16+16+8+8 = 88
+}
+
+// 7) 菱形 Diamond：八角菱形（8 寬 × 8 高，80）
+function buildDiamond(): LayoutSlot[] {
+  const slots: LayoutSlot[] = [];
+  // z=0 菱形外緣（漸寬 → 最寬 → 漸窄）
+  pushExplicit(slots, 0, [
+    { y: 0,  xs: [6, 8] },
+    { y: 2,  xs: [4, 6, 8, 10] },
+    { y: 4,  xs: [2, 4, 6, 8, 10, 12] },
+    { y: 6,  xs: [0, 2, 4, 6, 8, 10, 12, 14] },
+    { y: 8,  xs: [0, 2, 4, 6, 8, 10, 12, 14] },
+    { y: 10, xs: [2, 4, 6, 8, 10, 12] },
+    { y: 12, xs: [4, 6, 8, 10] },
+    { y: 14, xs: [6, 8] },
+  ]);
+  // z=0 = 2+4+6+8+8+6+4+2 = 40
+  // z=1 內菱形
+  pushExplicit(slots, 1, [
+    { y: 2,  xs: [6, 8] },
+    { y: 4,  xs: [4, 6, 8, 10] },
+    { y: 6,  xs: [2, 4, 6, 8, 10, 12] },
+    { y: 8,  xs: [2, 4, 6, 8, 10, 12] },
+    { y: 10, xs: [4, 6, 8, 10] },
+    { y: 12, xs: [6, 8] },
+  ]);
+  // z=1 = 2+4+6+6+4+2 = 24
+  // z=2 再內
+  pushExplicit(slots, 2, [
+    { y: 4,  xs: [6, 8] },
+    { y: 6,  xs: [4, 6, 8, 10] },
+    { y: 8,  xs: [4, 6, 8, 10] },
+    { y: 10, xs: [6, 8] },
+  ]);
+  // z=2 = 12
+  // z=3 中心
+  pushGrid(slots, 3, 6, 6, 2, 2); // 4
+  return slots; // 40+24+12+4 = 80
+}
+
+// 8) 沙漏 Hourglass：寬上 → 收腰 → 寬下（8 寬 × 8 高，64）
+function buildHourglass(): LayoutSlot[] {
+  const slots: LayoutSlot[] = [];
+  // z=0
+  pushExplicit(slots, 0, [
+    { y: 0,  xs: [0, 2, 4, 6, 8, 10, 12, 14] },
+    { y: 2,  xs: [2, 4, 6, 8, 10, 12] },
+    { y: 4,  xs: [4, 6, 8, 10] },
+    { y: 6,  xs: [6, 8] },
+    { y: 8,  xs: [6, 8] },
+    { y: 10, xs: [4, 6, 8, 10] },
+    { y: 12, xs: [2, 4, 6, 8, 10, 12] },
+    { y: 14, xs: [0, 2, 4, 6, 8, 10, 12, 14] },
+  ]);
+  // z=0 = 8+6+4+2+2+4+6+8 = 40
+  // z=1 內沙漏
+  pushExplicit(slots, 1, [
+    { y: 2,  xs: [4, 6, 8, 10] },
+    { y: 4,  xs: [6, 8] },
+    { y: 6,  xs: [6, 8] },
+    { y: 8,  xs: [6, 8] },
+    { y: 10, xs: [6, 8] },
+    { y: 12, xs: [4, 6, 8, 10] },
+  ]);
+  // z=1 = 4+2+2+2+2+4 = 16
+  // z=2 中央雙列
+  pushExplicit(slots, 2, [
+    { y: 6, xs: [6, 8] },
+    { y: 8, xs: [6, 8] },
+    { y: 4, xs: [6, 8] },
+    { y: 10, xs: [6, 8] },
+  ]);
+  // z=2 = 8
+  return slots; // 40+16+8 = 64
+}
+
+// 9) 心形 Heart：心式麻將主題（8 寬 × 7 高，60）
+function buildHeart(): LayoutSlot[] {
+  const slots: LayoutSlot[] = [];
+  // z=0 — 心形外輪廓
+  pushExplicit(slots, 0, [
+    { y: 0,  xs: [2, 4, 10, 12] },                       // 4（兩上突）
+    { y: 2,  xs: [0, 2, 4, 6, 8, 10, 12, 14] },          // 8
+    { y: 4,  xs: [0, 2, 4, 6, 8, 10, 12, 14] },          // 8
+    { y: 6,  xs: [2, 4, 6, 8, 10, 12] },                 // 6
+    { y: 8,  xs: [4, 6, 8, 10] },                        // 4
+    { y: 10, xs: [6, 8] },                                // 2
+    { y: 12, xs: [6, 8] },                                // 2 (心尖)
+  ]);
+  // z=0 = 34
+  // z=1 — 內層心形
+  pushExplicit(slots, 1, [
+    { y: 2,  xs: [4, 6, 8, 10] },         // 4
+    { y: 4,  xs: [2, 4, 6, 8, 10, 12] },  // 6
+    { y: 6,  xs: [4, 6, 8, 10] },         // 4
+    { y: 8,  xs: [6, 8] },                // 2
+  ]);
+  // z=1 = 16
+  // z=2 — 心臟核
+  pushExplicit(slots, 2, [
+    { y: 4, xs: [4, 6, 8, 10] },          // 4
+    { y: 6, xs: [6, 8] },                 // 2
+  ]);
+  // z=2 = 6
+  // z=3 — 心臟頂
+  pushExplicit(slots, 3, [
+    { y: 4, xs: [6, 8] },                 // 2
+    { y: 6, xs: [6, 8] },                 // 2
+  ]);
+  // z=3 = 4
+  return slots; // 34+16+6+4 = 60
+}
+
 // 5) 螺旋：8 寬同心環，向內每環 z+1（最寬 8 張）
 function buildSpiral(): LayoutSlot[] {
   const slots: LayoutSlot[] = [];
@@ -166,9 +315,16 @@ export const LAYOUTS: Record<LayoutKey, LayoutDef> = {
   twinTowers: { key: 'twinTowers', name: '雙塔',     desc: '上下兩座塔疊放，中間僅一列連接',           build: buildTwinTowers },
   bridge:     { key: 'bridge',     name: '橋樑',     desc: '左右兩塊平地，中間拱橋連接',               build: buildBridge },
   spiral:     { key: 'spiral',     name: '螺旋',     desc: '同心環狀向中心盤旋，順序影響開放路徑',     build: buildSpiral },
+  cross:      { key: 'cross',      name: '十字',     desc: '垂直長條 + 兩側水平延伸',                  build: buildCross },
+  diamond:    { key: 'diamond',    name: '菱形',     desc: '中央菱形向上收斂為四層尖塔',               build: buildDiamond },
+  hourglass:  { key: 'hourglass',  name: '沙漏',     desc: '寬上窄中再寬下，雙倒影對稱',               build: buildHourglass },
+  heart:      { key: 'heart',      name: '心形',     desc: '心式主題：兩上突 + 心尖向下',              build: buildHeart },
 };
 
-export const LAYOUT_KEYS: LayoutKey[] = ['turtle', 'pyramid', 'twinTowers', 'bridge', 'spiral'];
+export const LAYOUT_KEYS: LayoutKey[] = [
+  'turtle', 'pyramid', 'twinTowers', 'bridge', 'spiral',
+  'cross', 'diamond', 'hourglass', 'heart',
+];
 
 // 向後相容（已有測試與舊程式可能使用）
 export function getTurtleLayout(): LayoutSlot[] {
@@ -199,8 +355,8 @@ export function getLayoutSize(key: LayoutKey): { wide: number; tall: number } {
 
 // 根據 seed + 難度選一個 layout
 // easy：只用經典龜形
-// normal：龜形 / 金字塔 / 雙塔
-// hard：5 種全開（含橋樑、螺旋）
+// normal：龜 / 金字塔 / 雙塔 / 十字 / 菱形 / 心形（中等複雜度）
+// hard：全 9 種（額外加橋樑 / 螺旋 / 沙漏）
 export function pickLayoutKey(seed: number, difficulty: Difficulty = 'hard'): LayoutKey {
   let pool: LayoutKey[];
   switch (difficulty) {
@@ -208,7 +364,7 @@ export function pickLayoutKey(seed: number, difficulty: Difficulty = 'hard'): La
       pool = ['turtle'];
       break;
     case 'normal':
-      pool = ['turtle', 'pyramid', 'twinTowers'];
+      pool = ['turtle', 'pyramid', 'twinTowers', 'cross', 'diamond', 'heart'];
       break;
     case 'hard':
     default:

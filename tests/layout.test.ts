@@ -60,21 +60,21 @@ describe('layout', () => {
     }
   });
 
-  it('normal 難度不會出現 bridge / spiral', () => {
-    const allowed = new Set(['turtle', 'pyramid', 'twinTowers']);
-    for (let i = 0; i < 50; i++) {
+  it('normal 難度不會出現 bridge / spiral / hourglass', () => {
+    const allowed = new Set(['turtle', 'pyramid', 'twinTowers', 'cross', 'diamond', 'heart']);
+    for (let i = 0; i < 100; i++) {
       expect(allowed.has(pickLayoutKey(i, 'normal'))).toBe(true);
     }
   });
 
-  it('hard 難度可以涵蓋全部 5 種', () => {
+  it('hard 難度可以涵蓋全部 9 種', () => {
     const seen = new Set<string>();
-    for (let i = 0; i < 200; i++) seen.add(pickLayoutKey(i, 'hard'));
-    expect(seen.size).toBe(5);
+    for (let i = 0; i < 500; i++) seen.add(pickLayoutKey(i, 'hard'));
+    expect(seen.size).toBe(9);
   });
 
-  it('LAYOUTS 完整對應 5 種牌型', () => {
-    expect(LAYOUT_KEYS.length).toBe(5);
+  it('LAYOUTS 完整對應 9 種牌型', () => {
+    expect(LAYOUT_KEYS.length).toBe(9);
     for (const k of LAYOUT_KEYS) {
       expect(LAYOUTS[k]).toBeDefined();
       expect(LAYOUTS[k].name.length).toBeGreaterThan(0);
