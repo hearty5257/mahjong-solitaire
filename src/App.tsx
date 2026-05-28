@@ -17,9 +17,6 @@ const CURTAIN_OPEN_MS = 600;
 type View = 'landing' | 'game';
 
 const App: React.FC = () => {
-  const game = useGame();
-  const { state } = game;
-
   const [view, setView] = useState<View>('landing');
   const [landingDifficulty, setLandingDifficulty] = useState<Difficulty>('normal');
   const [curtainPhase, setCurtainPhase] = useState<CurtainPhase>('idle');
@@ -28,6 +25,9 @@ const App: React.FC = () => {
   const [effect, setEffect] = useState<EffectKey | null>(null);
   const [bombArmed, setBombArmed] = useState(false);
   const curtainBusy = useRef(false);
+
+  const game = useGame({ onEffect: setEffect });
+  const { state } = game;
 
   // 包一層：先 closing → action → opening → idle
   // fullscreen=true 時窗簾覆蓋整頁（landing ↔ game 切換用），否則只蓋牌盤

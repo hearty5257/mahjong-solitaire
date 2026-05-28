@@ -88,7 +88,12 @@ function initialGameState(seed: number, difficulty: Difficulty, inventory: ItemI
   };
 }
 
-export function useGame() {
+export interface UseGameOptions {
+  /** 道具特效觸發 callback（如 auto-shuffle 時用） */
+  onEffect?: (key: 'hint' | 'reveal' | 'unseal' | 'magicRemove' | 'undo' | 'shuffle') => void;
+}
+
+export function useGame(opts?: UseGameOptions) {
   const [seed, setSeed] = useState<number>(() => Math.floor(Math.random() * 1_000_000_000));
   const [difficulty, setDifficulty] = useState<Difficulty>('normal');
   const [persistedInventory, setPersistedInventory] = useState<ItemInventory>(() => {
@@ -298,6 +303,34 @@ export function useGame() {
       lastReward: reward,
     }));
   }, [state.status]);
+
+  // 卡關自動命運重排：若 status='stuck' 且還有 shuffle 道具，延遲後自動觸發
+  const onEffectRef = useRef(opts?.onEffect);
+  useEffect(() => { onEffectRef.current = opts?.onEffect; });
+
+  useEffect(() => {
+    if (state.status !== 'stuck') return;
+    const totalShuffle = state.items.shuffle + state.inventory.shuffle;
+    if (totalShuffle <= 0) return; // 沒道具則正常顯示卡關畫面
+
+    const id = window.setTimeout(() => {
+      setState((s) => {
+        if (s.status !== 'stuck') return s; // 期間狀態已變
+        const r = useShuffle(s);
+        if (!r.changed) return s;
+        const stillStuck = isStuck(r.state.board);
+        return {
+          ...r.state,
+          status: stillStuck ? 'stuck' : 'playing',
+          message: stillStuck
+            ? '命運重排後仍卡關，自動再試一次…'
+            : '卡關！自動觸發命運重排（-100 分）',
+        };
+      });
+      onEffectRef.current?.('shuffle');
+    }, 700);
+    return () => window.clearTimeout(id);
+  }, [state.status, state.items.shuffle, state.inventory.shuffle]);
 
   return {
     state,
