@@ -318,6 +318,32 @@ export function useGame(opts?: UseGameOptions) {
     }));
   }, [state.status]);
 
+  // 自動完成：剩 ≤ 4 張時自動清掉並轉為勝利（每張 +50 分加成）
+  useEffect(() => {
+    if (state.status !== 'playing') return;
+    const remaining = remainingCount(state.board);
+    if (remaining === 0 || remaining > 4) return;
+
+    const id = window.setTimeout(() => {
+      setState((s) => {
+        if (s.status !== 'playing') return s;
+        const rem = remainingCount(s.board);
+        if (rem === 0 || rem > 4) return s;
+        const newBoard = s.board.map((t) => (t.removed ? t : { ...t, removed: true }));
+        const bonus = rem * 50;
+        return {
+          ...s,
+          board: newBoard,
+          status: 'won',
+          endTimeMs: Date.now(),
+          score: s.score + bonus,
+          message: `🎊 剩 ${rem} 張自動完成！+${bonus} 分`,
+        };
+      });
+    }, 700);
+    return () => window.clearTimeout(id);
+  }, [state.board, state.status]);
+
   // 卡關自動命運重排：若 status='stuck' 且還有 shuffle 道具，延遲後自動觸發
   const onEffectRef = useRef(opts?.onEffect);
   useEffect(() => { onEffectRef.current = opts?.onEffect; });
