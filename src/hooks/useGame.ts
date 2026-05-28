@@ -14,8 +14,8 @@ import {
 import {
   INITIAL_ITEMS,
   makeHistoryEntry,
+  useBomb,
   useHint,
-  useMagicRemove,
   useReveal,
   useShuffle,
   useUndo,
@@ -221,8 +221,10 @@ export function useGame() {
   }, []);
 
   const doHint = useCallback(() => setState((s) => useHint(s).state), []);
-  const doMagicRemove = useCallback(() => setState((s) => {
-    const r = useMagicRemove(s);
+  // 炸彈：傳入目標 tileId，會隨機選一張同牌面組對炸掉（繞過 free / match 限制）
+  const doBomb = useCallback((tileId: number) => setState((s) => {
+    const rand = mulberry32((s.seed ^ tileId ^ Date.now()) | 0);
+    const r = useBomb(s, tileId, rand);
     if (isWin(r.state.board)) return { ...r.state, status: 'won', endTimeMs: Date.now() };
     if (isStuck(r.state.board)) return { ...r.state, status: 'stuck' };
     return r.state;
@@ -312,7 +314,7 @@ export function useGame() {
     restart,
     setDifficulty,
     doHint,
-    doMagicRemove,
+    doBomb,
     doUndo,
     doShuffle,
     doReveal,

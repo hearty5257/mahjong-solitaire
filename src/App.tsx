@@ -26,6 +26,7 @@ const App: React.FC = () => {
   const [curtainFullscreen, setCurtainFullscreen] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [effect, setEffect] = useState<EffectKey | null>(null);
+  const [bombArmed, setBombArmed] = useState(false);
   const curtainBusy = useRef(false);
 
   // 包一層：先 closing → action → opening → idle
@@ -69,9 +70,23 @@ const App: React.FC = () => {
     if (totalItem('unseal') > 0 && hasSealed) setEffect('unseal');
     game.doUnseal();
   };
-  const fxMagicRemove = () => {
-    if (totalItem('magicRemove') > 0 && hasAvailablePair) setEffect('magicRemove');
-    game.doMagicRemove();
+  // 炸彈：點按鈕進入「武裝」模式；點牌引爆；再點按鈕取消
+  const fxBomb = () => {
+    if (totalItem('magicRemove') <= 0) {
+      // 沒次數仍呼叫一次取得提示訊息
+      return;
+    }
+    setBombArmed((prev) => !prev);
+  };
+  // 玩家點 tile 的最外層攔截：bomb 模式時引爆，否則照常
+  const handleTileClick = (tileId: number) => {
+    if (bombArmed) {
+      setEffect('magicRemove');
+      game.doBomb(tileId);
+      setBombArmed(false);
+      return;
+    }
+    game.clickTile(tileId);
   };
   const fxUndo = () => {
     if (totalItem('undo') > 0 && state.history.length > 0) setEffect('undo');
@@ -199,8 +214,9 @@ const App: React.FC = () => {
       <MagicItems
         items={state.items}
         inventory={state.inventory}
+        bombArmed={bombArmed}
         onHint={fxHint}
-        onMagicRemove={fxMagicRemove}
+        onMagicRemove={fxBomb}
         onUndo={fxUndo}
         onShuffle={fxShuffle}
         onReveal={fxReveal}
@@ -208,7 +224,7 @@ const App: React.FC = () => {
         disabled={state.status !== 'playing' && state.history.length === 0}
       />
 
-      <div className="board-wrap">
+      <div className={`board-wrap ${bombArmed ? 'board-wrap--bomb-armed' : ''}`}>
         <button
           className="info-btn"
           onClick={() => setShowInfo(true)}
@@ -218,11 +234,15 @@ const App: React.FC = () => {
           i
         </button>
 
+        {bombArmed ? (
+          <div className="bomb-hint">💣 選一張牌引爆（再按一次按鈕取消）</div>
+        ) : null}
+
         <Board
           board={state.board}
           selectedId={state.selectedId}
           hintIds={state.hintIds}
-          onTileClick={game.clickTile}
+          onTileClick={handleTileClick}
         />
 
         {state.message ? <div className="message-toast">{state.message}</div> : null}

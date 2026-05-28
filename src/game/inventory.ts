@@ -198,7 +198,7 @@ export function drawReward(
 
 export const ITEM_NAMES: Record<ItemKey, string> = {
   hint: '靈視提示',
-  magicRemove: '魔法消除',
+  magicRemove: '炸彈',
   undo: '時光回溯',
   shuffle: '命運重排',
   reveal: '透視術',

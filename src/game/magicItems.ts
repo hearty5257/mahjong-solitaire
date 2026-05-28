@@ -77,25 +77,40 @@ export function useHint(state: GameState): MagicResult {
   return { state: next, message: next.message, changed: true };
 }
 
-// 2. 魔法消除
-export function useMagicRemove(state: GameState): MagicResult {
+// 2. 炸彈 Bomb（內部 key 仍為 magicRemove 以保留 localStorage 相容）
+// 玩家點任一張牌（包含被覆蓋 / 冰封 / 鎖鏈 / 迷霧）作為引爆目標，
+// 系統隨機選一張同牌面的牌組成一對一起炸掉。
+export function useBomb(state: GameState, targetId: number, rand: () => number): MagicResult {
   if (state.status !== 'playing') return { state, message: '遊戲已結束', changed: false };
   if (totalAvailable(state.items, state.inventory, 'magicRemove') <= 0) {
-    return { state, message: '魔法消除已用完', changed: false };
+    return { state, message: '炸彈已用完', changed: false };
   }
-  const pairs = getAvailableMatches(state.board);
-  if (pairs.length === 0) return { state, message: '目前沒有可消除的牌', changed: false };
 
-  const [a, b] = pairs[0];
-  const boardAfter = removePair(a, b, state.board);
-  if (!boardAfter) return { state, message: '魔法消除失敗', changed: false };
+  const target = state.board.find((t) => t.id === targetId);
+  if (!target || target.removed) {
+    return { state, message: '目標無效', changed: false };
+  }
+
+  // 找其他同牌面、未消除的牌（不需自由 / 不需可配對）
+  const candidates = state.board.filter(
+    (t) => t.id !== targetId && !t.removed && t.tileType === target.tileType,
+  );
+  if (candidates.length === 0) {
+    return { state, message: '沒有相同牌面的牌可炸', changed: false };
+  }
+  const other = candidates[Math.floor(rand() * candidates.length)];
+
+  // 強制移除這兩張（繞過 isMatchable / isTileFree）
+  const newBoard = state.board.map((t) =>
+    t.id === target.id || t.id === other.id ? { ...t, removed: true } : t,
+  );
 
   const consumed = consumeItem(state.items, state.inventory, 'magicRemove')!;
   const history = [...state.history, makeHistoryEntry(state)];
 
-  // 觸發 round modifier 後續效果
+  // 若炸的是 key 對 → 觸發鎖鏈解鎖
   const post = postPairEffects(
-    boardAfter, a, b, state.roundModifier,
+    newBoard, target.id, other.id, state.roundModifier,
     state.pairsSinceUnfreeze, state.keysRemaining,
   );
 
@@ -113,8 +128,8 @@ export function useMagicRemove(state: GameState): MagicResult {
     pairsSinceUnfreeze: post.pairsSinceUnfreeze,
     keysRemaining: post.keysRemaining,
     message: post.event
-      ? `魔法消除 (-${COST_MAGIC_REMOVE}) / ${post.event}`
-      : `魔法消除：自動消除一組 (-${COST_MAGIC_REMOVE} 分)`,
+      ? `炸彈 (-${COST_MAGIC_REMOVE}) / ${post.event}`
+      : `炸彈：炸掉一組 (-${COST_MAGIC_REMOVE} 分)`,
   };
   return { state: next, message: next.message, changed: true };
 }

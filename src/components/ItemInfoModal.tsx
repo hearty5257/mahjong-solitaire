@@ -20,7 +20,7 @@ const ITEMS: ItemInfo[] = [
   { key: 'hint',        emoji: '👁', desc: '高亮「一組」可配對的牌，不消除任何牌', cost: 10,  initial: 3 },
   { key: 'reveal',      emoji: '🌫', desc: '永久翻開所有迷霧牌（迷霧局有效）',     cost: 15,  initial: 1 },
   { key: 'unseal',      emoji: '🗝', desc: '解除一張冰封或鎖鏈牌（優先冰封）',     cost: 30,  initial: 1 },
-  { key: 'magicRemove', emoji: '✨', desc: '自動消除一組合法可移動配對',           cost: 50,  initial: 2 },
+  { key: 'magicRemove', emoji: '💣', desc: '選一張任意牌引爆，隨機選同牌面一張一起炸（可炸冰封 / 鎖鏈 / 迷霧）', cost: 50,  initial: 2 },
   { key: 'undo',        emoji: '⏪', desc: '回復上一個操作（整盤狀態完整還原）',   cost: 20,  initial: 3 },
   { key: 'shuffle',     emoji: '🔀', desc: '重新分配剩餘牌的牌面，位置與數量不變', cost: 100, initial: 1 },
 ];

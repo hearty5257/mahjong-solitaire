@@ -4,13 +4,14 @@ import {
   INITIAL_ITEMS,
   consumeItem,
   totalAvailable,
+  useBomb,
   useHint,
-  useMagicRemove,
   useReveal,
   useShuffle,
   useUndo,
   useUnseal,
 } from '../src/game/magicItems';
+import { mulberry32 } from '../src/game/rng';
 import { EMPTY_INVENTORY } from '../src/game/inventory';
 import { remainingCount } from '../src/game/rules';
 
@@ -101,17 +102,48 @@ describe('useHint', () => {
   });
 });
 
-describe('useMagicRemove', () => {
-  it('一次只移除一組合法配對', () => {
+describe('useBomb (炸彈)', () => {
+  it('炸掉指定的牌 + 隨機選同牌面一張', () => {
     const state = makeState([
       t(0, 'dot-1', 0, 0, 0), t(1, 'dot-1', 4, 0, 0),
       t(2, 'dot-2', 8, 0, 0), t(3, 'dot-2', 12, 0, 0),
     ]);
-    const r = useMagicRemove(state);
+    const r = useBomb(state, 0, mulberry32(7)); // 炸 t0 (dot-1)
     expect(r.changed).toBe(true);
     expect(remainingCount(state.board) - remainingCount(r.state.board)).toBe(2);
-    expect(r.state.items.magicRemove).toBe(state.items.magicRemove - 1);
-    expect(r.state.history.length).toBe(1);
+    expect(r.state.board.find((x) => x.id === 0)?.removed).toBe(true);
+    // 另一張被炸的牌也是 dot-1
+    const otherRemoved = r.state.board.filter((x) => x.id !== 0 && x.removed);
+    expect(otherRemoved.length).toBe(1);
+    expect(otherRemoved[0].tileType).toBe('dot-1');
+  });
+
+  it('可以炸冰封 / 鎖鏈牌（繞過 isMatchable）', () => {
+    const state = makeState([
+      { ...t(0, 'dot-1', 0, 0, 0), modifier: 'frozen' },
+      { ...t(1, 'dot-1', 4, 0, 0), modifier: 'locked' },
+    ]);
+    const r = useBomb(state, 0, mulberry32(7));
+    expect(r.changed).toBe(true);
+    expect(r.state.board.find((x) => x.id === 0)?.removed).toBe(true);
+    expect(r.state.board.find((x) => x.id === 1)?.removed).toBe(true);
+  });
+
+  it('沒有同牌面其他牌可炸：不消耗次數', () => {
+    const state = makeState([
+      t(0, 'dot-1', 0, 0, 0),
+      t(1, 'dot-2', 4, 0, 0),
+    ]);
+    const r = useBomb(state, 0, mulberry32(7));
+    expect(r.changed).toBe(false);
+    expect(r.state.items.magicRemove).toBe(state.items.magicRemove);
+  });
+
+  it('次數用完時不可使用', () => {
+    const state = makeState([t(0, 'dot-1', 0, 0, 0), t(1, 'dot-1', 4, 0, 0)]);
+    state.items.magicRemove = 0;
+    const r = useBomb(state, 0, mulberry32(1));
+    expect(r.changed).toBe(false);
   });
 });
 
@@ -128,12 +160,12 @@ describe('useShuffle', () => {
 });
 
 describe('useUndo', () => {
-  it('可回復剛剛的配對消除，並還原 inventory 狀態', () => {
+  it('可回復剛剛的炸彈消除，並還原 inventory 狀態', () => {
     const state = makeState([
       t(0, 'dot-1', 0, 0, 0), t(1, 'dot-1', 4, 0, 0),
       t(2, 'dot-2', 8, 0, 0), t(3, 'dot-2', 12, 0, 0),
     ]);
-    const r1 = useMagicRemove(state);
+    const r1 = useBomb(state, 0, mulberry32(7));
     expect(remainingCount(r1.state.board)).toBe(2);
     const r2 = useUndo(r1.state);
     expect(r2.changed).toBe(true);
@@ -146,7 +178,7 @@ describe('useUndo', () => {
       { ...t(0, 'dot-1', 0, 0, 0), modifier: 'frozen' },
       t(1, 'dot-2', 4, 0, 0), t(2, 'dot-2', 8, 0, 0),
     ]);
-    const r1 = useMagicRemove(state); // 消 t1+t2
+    const r1 = useBomb(state, 1, mulberry32(7)); // 炸 t1 + t2 (dot-2)
     expect(remainingCount(r1.state.board)).toBe(1); // 只剩 t0 (frozen)
     const r2 = useUndo(r1.state);
     // t1 / t2 應該回來，且 t0 仍為 frozen

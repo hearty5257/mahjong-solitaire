@@ -22,7 +22,7 @@ const ICON: Record<EffectKey, string> = {
   hint: '👁',
   reveal: '🌫',
   unseal: '🗝',
-  magicRemove: '✨',
+  magicRemove: '💥',   // 炸彈引爆 (按鈕用 💣，特效用 💥)
   undo: '⏪',
   shuffle: '🔀',
 };
@@ -43,10 +43,11 @@ const EffectLayer: React.FC<Props> = ({ effect, onDone }) => {
       {/* 額外粒子（依特效需要） */}
       {effect === 'magicRemove' ? (
         <>
-          <div className="fx-sparkle fx-sparkle--1">✦</div>
-          <div className="fx-sparkle fx-sparkle--2">✧</div>
-          <div className="fx-sparkle fx-sparkle--3">✦</div>
-          <div className="fx-sparkle fx-sparkle--4">✧</div>
+          {/* 炸彈衝擊波 + 火花 */}
+          <div className="fx-sparkle fx-sparkle--1">🔥</div>
+          <div className="fx-sparkle fx-sparkle--2">💥</div>
+          <div className="fx-sparkle fx-sparkle--3">🔥</div>
+          <div className="fx-sparkle fx-sparkle--4">💥</div>
         </>
       ) : null}
       {effect === 'reveal' ? <div className="fx-veil" /> : null}
