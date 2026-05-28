@@ -56,7 +56,7 @@ export function makeHistoryEntry(state: GameState): MoveHistoryEntry {
 
 // 1. 靈視提示
 export function useHint(state: GameState): MagicResult {
-  if (state.status !== 'playing') return { state, message: '遊戲已結束', changed: false };
+  if (state.status === 'won') return { state, message: '遊戲已結束', changed: false };
   if (totalAvailable(state.items, state.inventory, 'hint') <= 0) {
     return { state, message: '靈視提示已用完', changed: false };
   }
@@ -81,7 +81,7 @@ export function useHint(state: GameState): MagicResult {
 // 玩家點任一張牌（包含被覆蓋 / 冰封 / 鎖鏈 / 迷霧）作為引爆目標，
 // 系統隨機選一張同牌面的牌組成一對一起炸掉。
 export function useBomb(state: GameState, targetId: number, rand: () => number): MagicResult {
-  if (state.status !== 'playing') return { state, message: '遊戲已結束', changed: false };
+  if (state.status === 'won') return { state, message: '遊戲已結束', changed: false };
   if (totalAvailable(state.items, state.inventory, 'magicRemove') <= 0) {
     return { state, message: '炸彈已用完', changed: false };
   }
@@ -174,7 +174,7 @@ export function useUndo(state: GameState): MagicResult {
 
 // 4. 命運重排
 export function useShuffle(state: GameState): MagicResult {
-  if (state.status !== 'playing') return { state, message: '遊戲已結束', changed: false };
+  if (state.status === 'won') return { state, message: '遊戲已結束', changed: false };
   if (totalAvailable(state.items, state.inventory, 'shuffle') <= 0) {
     return { state, message: '命運重排已用完', changed: false };
   }
@@ -200,7 +200,7 @@ export function useShuffle(state: GameState): MagicResult {
 
 // 5. 透視術 Reveal：永久翻開所有目前的迷霧牌
 export function useReveal(state: GameState): MagicResult {
-  if (state.status !== 'playing') return { state, message: '遊戲已結束', changed: false };
+  if (state.status === 'won') return { state, message: '遊戲已結束', changed: false };
   if (totalAvailable(state.items, state.inventory, 'reveal') <= 0) {
     return { state, message: '透視術已用完', changed: false };
   }
@@ -225,7 +225,7 @@ export function useReveal(state: GameState): MagicResult {
 
 // 7. 解封術 Unseal：解除 1 張冰封或鎖鏈
 export function useUnseal(state: GameState): MagicResult {
-  if (state.status !== 'playing') return { state, message: '遊戲已結束', changed: false };
+  if (state.status === 'won') return { state, message: '遊戲已結束', changed: false };
   if (totalAvailable(state.items, state.inventory, 'unseal') <= 0) {
     return { state, message: '解封術已用完', changed: false };
   }

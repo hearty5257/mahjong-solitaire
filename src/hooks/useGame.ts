@@ -225,26 +225,40 @@ export function useGame(opts?: UseGameOptions) {
     });
   }, []);
 
+  // 共用工具：依新棋盤狀態決定 status（win / stuck / playing）
+  const resolveStatus = (board: GameState['board'], current: GameState): GameState['status'] => {
+    if (isWin(board)) return 'won';
+    if (isStuck(board)) return 'stuck';
+    return 'playing';
+  };
+
   const doHint = useCallback(() => setState((s) => useHint(s).state), []);
   // 炸彈：傳入目標 tileId，會隨機選一張同牌面組對炸掉（繞過 free / match 限制）
   const doBomb = useCallback((tileId: number) => setState((s) => {
     const rand = mulberry32((s.seed ^ tileId ^ Date.now()) | 0);
     const r = useBomb(s, tileId, rand);
-    if (isWin(r.state.board)) return { ...r.state, status: 'won', endTimeMs: Date.now() };
-    if (isStuck(r.state.board)) return { ...r.state, status: 'stuck' };
-    return r.state;
+    if (!r.changed) return r.state;
+    const status = resolveStatus(r.state.board, r.state);
+    return { ...r.state, status, endTimeMs: status === 'won' ? Date.now() : null };
   }), []);
   const doUndo = useCallback(() => setState((s) => useUndo(s).state), []);
   const doShuffle = useCallback(() => setState((s) => {
     const r = useShuffle(s);
-    if (isStuck(r.state.board)) return { ...r.state, status: 'stuck' };
-    return r.state;
+    if (!r.changed) return r.state;
+    const status = resolveStatus(r.state.board, r.state);
+    return { ...r.state, status, endTimeMs: status === 'won' ? Date.now() : null };
   }), []);
-  const doReveal = useCallback(() => setState((s) => useReveal(s).state), []);
+  const doReveal = useCallback(() => setState((s) => {
+    const r = useReveal(s);
+    if (!r.changed) return r.state;
+    const status = resolveStatus(r.state.board, r.state);
+    return { ...r.state, status, endTimeMs: status === 'won' ? Date.now() : null };
+  }), []);
   const doUnseal = useCallback(() => setState((s) => {
     const r = useUnseal(s);
-    if (isStuck(r.state.board)) return { ...r.state, status: 'stuck' };
-    return r.state;
+    if (!r.changed) return r.state;
+    const status = resolveStatus(r.state.board, r.state);
+    return { ...r.state, status, endTimeMs: status === 'won' ? Date.now() : null };
   }), []);
 
   const elapsedSec = useMemo(() => {
