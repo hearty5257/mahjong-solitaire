@@ -114,24 +114,35 @@ const App: React.FC = () => {
           />
 
           <div className="landing-actions">
+            {/* 難度選擇 — 三顆大按鈕 */}
+            <div className="landing-difficulty-label">選擇難度</div>
+            <div className="difficulty-buttons">
+              {(['easy', 'normal', 'hard'] as Difficulty[]).map((d) => (
+                <button
+                  key={d}
+                  className={`difficulty-btn ${landingDifficulty === d ? 'difficulty-btn--active' : ''}`}
+                  onClick={() => setLandingDifficulty(d)}
+                >
+                  <div className="difficulty-name">
+                    {d === 'easy' ? '簡單' : d === 'normal' ? '普通' : '困難'}
+                  </div>
+                  <div className="difficulty-desc">
+                    {d === 'easy'
+                      ? '經典龜形'
+                      : d === 'normal'
+                        ? '六種牌型'
+                        : '九種牌型 + 特殊規則'}
+                  </div>
+                </button>
+              ))}
+            </div>
+
             <button
               className="btn btn--primary btn--start"
               onClick={() => goToGame()}
             >
               開始遊戲
             </button>
-
-            <div className="landing-difficulty">
-              <label>難度：</label>
-              <select
-                value={landingDifficulty}
-                onChange={(e) => setLandingDifficulty(e.target.value as Difficulty)}
-              >
-                <option value="easy">簡單 · 經典龜形</option>
-                <option value="normal">普通 · 三種牌型</option>
-                <option value="hard">困難 · 五種牌型 + 特殊規則</option>
-              </select>
-            </div>
 
             <button
               className={`btn btn--daily ${game.dailyDoneToday() ? 'btn--daily-active' : ''}`}
